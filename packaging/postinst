@@ -1,0 +1,30 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+	# The MariaDB account, its credentials file and the backup root. setup
+	# changes nothing that works, so it runs on every upgrade too. A server that
+	# is not running does not fail the installation.
+	if ! mariadb-backuper setup -config /etc/mariadb-backuper.json; then
+		echo "mariadb-backuper: the setup is not complete, fix the errors above and run: sudo mariadb-backuper setup" >&2
+	fi
+fi
+
+# The timer is enabled on the first installation and keeps the state the
+# administrator gave it on the upgrades, the way debhelper does it
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ]; then
+	deb-systemd-helper unmask 'mariadb-backuper.timer' >/dev/null || true
+	if deb-systemd-helper --quiet was-enabled 'mariadb-backuper.timer'; then
+		deb-systemd-helper enable 'mariadb-backuper.timer' >/dev/null || true
+	else
+		deb-systemd-helper update-state 'mariadb-backuper.timer' >/dev/null || true
+	fi
+
+	if [ -d /run/systemd/system ]; then
+		systemctl --system daemon-reload >/dev/null || true
+		# Starts an enabled timer only
+		deb-systemd-invoke start 'mariadb-backuper.timer' >/dev/null || true
+	fi
+fi
+
+exit 0

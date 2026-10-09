@@ -1,0 +1,42 @@
+# The deb package, built by package.sh from the binaries of build.sh:
+#   bash build.sh && bash package.sh 1.0.0
+name: mariadb-backuper
+arch: ${ARCH}
+platform: linux
+version: ${VERSION}
+section: admin
+priority: optional
+maintainer: simba77 <simba7@inbox.ru>
+description: |-
+  Physical backups of MariaDB with mariadb-backup.
+  A full copy a week and an incremental copy every day on top of it, verified
+  and published in the layout of the backup downloader.
+
+depends:
+  - mariadb-backup
+  - zstd
+  - mariadb-client-core | mariadb-client
+
+contents:
+  # package.sh puts the binary of the architecture here
+  - src: build/package/mariadb-backuper
+    dst: /usr/bin/mariadb-backuper
+    file_info:
+      mode: 0755
+  - src: systemd/mariadb-backuper.service
+    dst: /usr/lib/systemd/system/mariadb-backuper.service
+  - src: systemd/mariadb-backuper.timer
+    dst: /usr/lib/systemd/system/mariadb-backuper.timer
+  # Edits of the administrator survive the upgrades
+  - src: config.json.example
+    dst: /etc/mariadb-backuper.json
+    type: config|noreplace
+    file_info:
+      mode: 0640
+  - src: readme.md
+    dst: /usr/share/doc/mariadb-backuper/readme.md
+
+scripts:
+  postinstall: packaging/postinst
+  preremove: packaging/prerm
+  postremove: packaging/postrm

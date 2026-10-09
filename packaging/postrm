@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+
+if [ -d /run/systemd/system ]; then
+	systemctl --system daemon-reload >/dev/null || true
+fi
+
+if [ "$1" = "remove" ]; then
+	deb-systemd-helper mask 'mariadb-backuper.timer' >/dev/null || true
+fi
+
+if [ "$1" = "purge" ]; then
+	deb-systemd-helper purge 'mariadb-backuper.timer' >/dev/null || true
+	deb-systemd-helper unmask 'mariadb-backuper.timer' >/dev/null || true
+
+	# The password goes with the package, if setup wrote the file. The copies
+	# and the account are kept: deleting backups is not up to a package manager.
+	credentials=/etc/mysql/mariadb-backup.cnf
+	if [ -f "$credentials" ] && head -n 1 "$credentials" | grep -q '^# Written by mariadb-backuper setup'; then
+		rm -f "$credentials"
+	fi
+	echo "mariadb-backuper: the copies in /var/backups/mariadb and the MariaDB account 'mariadb-backup'@'localhost' are kept." >&2
+	echo "To delete them: rm -rf /var/backups/mariadb && mariadb -e \"DROP USER 'mariadb-backup'@'localhost'\"" >&2
+fi
+
+exit 0

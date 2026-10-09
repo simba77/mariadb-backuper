@@ -1,0 +1,15 @@
+{
+  "backupRoot": "/var/backups/mariadb",
+  "name": "mariadb",
+  "credentialsFile": "/etc/mysql/mariadb-backup.cnf",
+  "mariadbBackupPath": "mariadb-backup",
+  "zstdPath": "zstd",
+  "mariadbPath": "mariadb",
+  "fullIntervalDays": 7,
+  "minFreeSpaceGB": 20,
+  "zstdLevel": 3,
+  "zstdThreads": 2,
+  "parallel": 1,
+  "keepLogs": 30,
+  "logLevel": "info"
+}

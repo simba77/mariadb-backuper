@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily MariaDB backup at 02:00
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+# A run missed while the server was off is made right after the boot
+Persistent=true
+AccuracySec=1min
+Unit=mariadb-backuper.service
+
+[Install]
+WantedBy=timers.target

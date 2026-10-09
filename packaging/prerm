@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+# Only the timer is stopped: a backup running during an upgrade finishes with
+# the old binary, and the next one starts with the new one
+if [ "$1" = "remove" ] && [ -d /run/systemd/system ]; then
+	deb-systemd-invoke stop 'mariadb-backuper.timer' >/dev/null || true
+fi
+
+exit 0

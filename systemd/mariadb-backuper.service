@@ -1,0 +1,44 @@
+[Unit]
+Description=MariaDB backup (mariadb-backuper)
+# Only orders the start at boot, the backup never starts MariaDB itself
+After=mariadb.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0027
+ExecStart=/usr/bin/mariadb-backuper backup -config /etc/mariadb-backuper.json
+
+# A full copy of a large database takes hours. The limit only stops a hung
+# run before the next one is due; the copy is then not published.
+TimeoutStartSec=20h
+# SIGTERM goes to the backuper alone: it stops mariadb-backup and zstd itself
+# and gives them a minute before SIGKILL
+KillMode=mixed
+TimeoutStopSec=90s
+
+# The database keeps the priority
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+# Hardening. mariadb-backup reads the datadir and connects to the socket of
+# the server, the copies are written to /var/backups, so /var stays writable.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=full
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=yes
+SystemCallArchitectures=native
