@@ -73,12 +73,20 @@ The backuper and the downloader know nothing about each other: no acknowledgemen
 
 ### From the package
 
-Download the package for the architecture of the server from a release and install it with apt, which brings
-`mariadb-backup`, `zstd` and the `mariadb` client along:
+Every [release](https://github.com/simba77/mariadb-backuper/releases) has a package for `amd64` and `arm64`.
+Download the latest one for the architecture of the server and install it with apt, which brings `mariadb-backup`,
+`zstd` and the `mariadb` client along:
 
 ```shell
-apt install ./mariadb-backuper_1.0.0_amd64.deb
+VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/simba77/mariadb-backuper/releases/latest | sed 's|.*/v||')
+ARCH=$(dpkg --print-architecture)
+curl -fL -o /tmp/mariadb-backuper.deb https://github.com/simba77/mariadb-backuper/releases/download/v$VERSION/mariadb-backuper_${VERSION}_$ARCH.deb
+apt install /tmp/mariadb-backuper.deb
 ```
+
+The package name carries the version, so the latest one is found by the redirect of `releases/latest`. The file
+goes to `/tmp`, which apt can read without the "Download is performed unsandboxed" notice. To install a specific
+version, set `VERSION=1.0.0` instead.
 
 The package puts the binary to `/usr/bin`, the units to `/usr/lib/systemd/system` and the config to
 `/etc/mariadb-backuper.json`, then:
@@ -90,7 +98,7 @@ A setup that fails, for example while MariaDB is stopped, does not fail the inst
 the error is printed, and `sudo mariadb-backuper setup` is to be run once the reason is fixed. `mariadb-backuper
 check` then fails until it is.
 
-An upgrade is the same `apt install` of a newer package. It keeps the edited config, runs the setup again, which
+An upgrade is the same commands with a newer release. It keeps the edited config, runs the setup again, which
 changes nothing that works, and leaves the timer enabled or disabled the way it was.
 
 `apt remove` stops and disables the timer. `apt purge` also deletes the config and the credentials file written by
@@ -103,9 +111,12 @@ mariadb -e "DROP USER 'mariadb-backup'@'localhost'"
 
 ### Without the package
 
+The releases also have the bare binaries, `linux-amd64` and `linux-arm64`. The units come from the repository:
+
 ```shell
 apt install mariadb-backup zstd
-install -m 755 build/linux-amd64 /usr/bin/mariadb-backuper
+curl -fL -o /usr/bin/mariadb-backuper https://github.com/simba77/mariadb-backuper/releases/latest/download/linux-$(dpkg --print-architecture)
+chmod 755 /usr/bin/mariadb-backuper
 mariadb-backuper setup        # also writes the default config when there is none
 install -m 644 systemd/mariadb-backuper.service systemd/mariadb-backuper.timer /etc/systemd/system/
 systemctl daemon-reload
